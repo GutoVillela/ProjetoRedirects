@@ -73,6 +73,16 @@ namespace Projeto_Redirects.Properties {
         /// <summary>
         ///   Consulta um recurso localizado do tipo System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap icone_cancelar {
+            get {
+                object obj = ResourceManager.GetObject("icone-cancelar", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Consulta um recurso localizado do tipo System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap icone_gerador_de_redirect {
             get {
                 object obj = ResourceManager.GetObject("icone-gerador-de-redirect", resourceCulture);

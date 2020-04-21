@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -18,6 +19,7 @@ namespace Projeto_Redirects
         public Form1()
         {
             InitializeComponent();
+            this._cancelarProcessamento = new CancellationTokenSource();
         }
         #endregion
 
@@ -31,6 +33,35 @@ namespace Projeto_Redirects
         /// Caminho do Sitemap Atual no Computador do Usuário
         /// </summary>
         private string _caminhoSitemapAtual;
+
+        /// <summary>
+        /// Token de Cancelamento responsável pelo cancelamento da tarefa caso o usuário clique no botão Cancelar
+        /// </summary>
+        private CancellationTokenSource _cancelarProcessamento;
+
+        /// <summary>
+        /// Indica qual função o botão de processamento adotará ao ser clicado pelo usuário (acesse esta informação somente pela propriedade FuncaoBotaoProcessamento, NUNCA diretamente por este atributo)
+        /// </summary>
+        private BotaoProcessamento _funcaoBotaoProcessamento;
+        #endregion
+
+        #region Propriedades
+        /// <summary>
+        /// Propriedade que indica a função atual do botão de processamento na tela
+        /// </summary>
+        private BotaoProcessamento FuncaoBotaoProcessamento
+        {
+            get
+            {
+                return _funcaoBotaoProcessamento;
+            }
+
+            set
+            {
+                FormatarBotaoDeProcessamento(value);
+                _funcaoBotaoProcessamento = value;
+            }
+        }
         #endregion
 
         #region Eventos
@@ -72,9 +103,9 @@ namespace Projeto_Redirects
             }
         }
 
-        private async void txtGerarRedirects_Click(object sender, EventArgs e)
+        private async void btnGerarRedirects_Click(object sender, EventArgs e)
         {
-            try
+            if(FuncaoBotaoProcessamento == BotaoProcessamento.IniciarProcessamento)
             {
                 if (string.IsNullOrEmpty(_caminhoSitemapAntigo) || string.IsNullOrEmpty(_caminhoSitemapAtual))
                 {
@@ -82,15 +113,62 @@ namespace Projeto_Redirects
                     return;
                 }
 
-                //Task iniciarprocessamento = new Task(await IniciarProcessamentoAsync());
-                await IniciarProcessamentoAsync();
+                // Mudar função deste botão para Cancelar
+                FuncaoBotaoProcessamento = BotaoProcessamento.CancelarProcessamento;
+
+                //Acompanhar progresso da tarefa
+                Progress<ProgressoDaTarefa> progressoDaTarefa = new Progress<ProgressoDaTarefa>();
+                progressoDaTarefa.ProgressChanged += ProgressoDaTarefa_ProgressChanged;
+                var assitirProgresso = System.Diagnostics.Stopwatch.StartNew();
+
+                try
+                {
+                    //Iniciar processamento da Tarefa
+                    await IniciarProcessamentoAsync(progressoDaTarefa, _cancelarProcessamento.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    this.UseWaitCursor = false;
+                    _cancelarProcessamento = new CancellationTokenSource();
+                    pgbProgresso.Value = 0;
+                    lblEtapaAtual.Text = "Operação Cancelada pelo Usuário!";
+                    lblEtapaAtual.BackColor = Color.LightPink;
+                    FuncaoBotaoProcessamento = BotaoProcessamento.IniciarProcessamento;
+                }
+                catch (Exception erro)
+                {
+                    this.UseWaitCursor = false;
+                    MessageBox.Show("Aconteceu um erro: " + erro.Message, "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    pgbProgresso.Value = 0;
+                    lblEtapaAtual.Text = "Aconteceu um erro! Tente novamente";
+                    lblEtapaAtual.BackColor = Color.LightPink;
+                    FuncaoBotaoProcessamento = BotaoProcessamento.IniciarProcessamento;
+                }
+
+                assitirProgresso.Stop();
             }
-            catch (Exception erro)
+            else if(FuncaoBotaoProcessamento == BotaoProcessamento.CancelarProcessamento)
+            {
+                _cancelarProcessamento.Cancel();
+            }
+        }
+
+        private void ProgressoDaTarefa_ProgressChanged(object sender, ProgressoDaTarefa e)
+        {
+            pgbProgresso.Value = e.Progresso;
+            lblEtapaAtual.Text = e.EtapaAtual;
+
+            if(e.Progresso < 100)
+            {
+                this.UseWaitCursor = true;
+                FuncaoBotaoProcessamento = BotaoProcessamento.CancelarProcessamento;
+                lblEtapaAtual.BackColor = Color.LightGray;
+            }
+            else
             {
                 this.UseWaitCursor = false;
-                MessageBox.Show("Aconteceu um erro: " + erro.Message, "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                lblEtapaAtual.Text = "Aconteceu um erro! Tente novamente";
-                lblEtapaAtual.BackColor = Color.LightPink;
+                FuncaoBotaoProcessamento = BotaoProcessamento.IniciarProcessamento;
+                lblEtapaAtual.BackColor = Color.LightGreen;
             }
         }
         #endregion
@@ -100,36 +178,43 @@ namespace Projeto_Redirects
         /// Método que inicia processamento do 
         /// </summary>
         /// <returns></returns>
-        private async Task IniciarProcessamentoAsync()
+        private async Task IniciarProcessamentoAsync(IProgress<ProgressoDaTarefa> pProgresso, CancellationToken pCancelarTarefa)
         {
-            this.UseWaitCursor = true;
+            ProgressoDaTarefa reportarProgresso = new ProgressoDaTarefa();
             List<Redirect> redirects = new List<Redirect>();
 
             //Lendo arquivos XML e recuperando URLs
-            lblEtapaAtual.Text = "Lendo arquivos XML...";
-            lblEtapaAtual.BackColor = Color.LightGray;
-            List<string> urlsSitemapAntigo = await GerarListaDeUrlsAsync(_caminhoSitemapAntigo, chkRemoverSubdominio.Checked);
-            List<string> urlsSitemapAtual = await GerarListaDeUrlsAsync(_caminhoSitemapAtual, chkRemoverSubdominio.Checked);
+            reportarProgresso.Progresso = 10;
+            reportarProgresso.EtapaAtual = "Lendo arquivos XML...";
+            pProgresso.Report(reportarProgresso);
+            List<string> urlsSitemapAntigo = await GerarListaDeUrlsAsync(_caminhoSitemapAntigo, chkRemoverSubdominio.Checked, pCancelarTarefa);
+            List<string> urlsSitemapAtual = await GerarListaDeUrlsAsync(_caminhoSitemapAtual, chkRemoverSubdominio.Checked, pCancelarTarefa);
 
             //Removendo ocorrências idênticas entre URLs do site atual e site antigo
-            lblEtapaAtual.Text = "Removendo ocorrências idênticas...";
+            reportarProgresso.Progresso = 20;
+            reportarProgresso.EtapaAtual = "Removendo ocorrências idênticas...";
+            pProgresso.Report(reportarProgresso);
             urlsSitemapAntigo = urlsSitemapAntigo.Except(urlsSitemapAtual).ToList();
 
 
             //Buscando semelhanças
-            lblEtapaAtual.Text = "Gerando Redirects...";
-            int qtdRedirectsFeitos = await Task.Run(() => GerarRedirects(urlsSitemapAntigo, urlsSitemapAtual, out redirects));
+            reportarProgresso.Progresso = 30;
+            reportarProgresso.EtapaAtual = "Gerando Redirects...";
+            pProgresso.Report(reportarProgresso);
+            int qtdRedirectsFeitos = await Task.Run(() => GerarRedirects(urlsSitemapAntigo, urlsSitemapAtual, out redirects, pCancelarTarefa));
             MessageBox.Show("Redirects feitos: " + qtdRedirectsFeitos);
 
 
             //Salvando arquivo com redirects
-            lblEtapaAtual.Text = "Salvando arquivo...";
+            reportarProgresso.Progresso = 90;
+            reportarProgresso.EtapaAtual = "Salvando arquivo...";
+            pProgresso.Report(reportarProgresso);
             await EscreverArquivoAsync(redirects);
 
             //Finalizando operação
-            lblEtapaAtual.Text = "Redirects gerados com sucesso";
-            lblEtapaAtual.BackColor = Color.LightGreen;
-            this.UseWaitCursor = false;
+            reportarProgresso.Progresso = 100;
+            reportarProgresso.EtapaAtual = "Redirects gerados com sucesso";
+            pProgresso.Report(reportarProgresso);
         }
 
         /// <summary>
@@ -137,8 +222,9 @@ namespace Projeto_Redirects
         /// </summary>
         /// <param name="pCaminhoSitemap">Caminho do Sitemap no Computador do Usuário</param>
         /// <param name="pRemoverSubdominio">Define se o subdomínio será removido das URLs</param>
+        /// <param name="pCancelarTarefa">Token de Cancelamento que indica quando a tarefa deve ser abortada</param>
         /// <returns>Lista de string com URLs encontradas no Sitemap</returns>
-        private async Task<List<string>> GerarListaDeUrlsAsync(string pCaminhoSitemap, bool pRemoverSubdominio)
+        private async Task<List<string>> GerarListaDeUrlsAsync(string pCaminhoSitemap, bool pRemoverSubdominio, CancellationToken pCancelarTarefa)
         {
             List<string> listaDeUrls = new List<string>();
 
@@ -154,6 +240,9 @@ namespace Projeto_Redirects
 
                     foreach (Match ocorrencia in ocorrencias)
                     {
+                        // Cancelar tarefa assim que solicitado pelo usuário
+                        pCancelarTarefa.ThrowIfCancellationRequested();
+
                         string url = ocorrencia.Groups["url"].ToString();
 
                         if (pRemoverSubdominio)
@@ -161,7 +250,6 @@ namespace Projeto_Redirects
 
                         listaDeUrls.Add(url);
                     }
-
                 }
 
                 return listaDeUrls;
@@ -178,14 +266,18 @@ namespace Projeto_Redirects
         /// <param name="pUrlsSitemapAntigo">Lista de URLs do Sitemap antigo</param>
         /// <param name="pUrlsSitemapAtual">Lista de URLs do Sitemap atual</param>
         /// <param name="pRedirects">Lista de Redirects para ser preenchido</param>
+        /// <param name="pCancelarTarefa">Token de Cancelamento que indica quando a tarefa deve ser abortada</param>
         /// <returns>Retorna quantidade de Redirects</returns>
-        private int GerarRedirects(List<string> pUrlsSitemapAntigo, List<string> pUrlsSitemapAtual, out List<Redirect> pRedirects)
+        private int GerarRedirects(List<string> pUrlsSitemapAntigo, List<string> pUrlsSitemapAtual, out List<Redirect> pRedirects, CancellationToken pCancelarTarefa)
         {
             List<Redirect> redirects = new List<Redirect>();
 
             #region Buscando URLs com final idêntico
             foreach (string urlAntiga in pUrlsSitemapAntigo)
             {
+                // Cancelar tarefa assim que solicitado pelo usuário
+                pCancelarTarefa.ThrowIfCancellationRequested();
+
                 string urlAntigaFormatada = urlAntiga;
 
                 //Se o último caractere da URL for uma barra, ela deve ser subtraída
@@ -362,6 +454,36 @@ namespace Projeto_Redirects
                 }
             }
         }
+
+        /// <summary>
+        /// Formata a aparência do botão de processamento para assumir a função de Iniciar ou Cancelar o processamento
+        /// </summary>
+        /// <param name="pFuncaoBotao"></param>
+        private void FormatarBotaoDeProcessamento(BotaoProcessamento pFuncaoBotao)
+        {
+            if(pFuncaoBotao == BotaoProcessamento.IniciarProcessamento)
+            {
+                btnGerarRedirects.BackColor = SystemColors.Highlight;
+                btnGerarRedirects.Text = "Gerar Redirects";
+                btnGerarRedirects.Image = Properties.Resources.icone_gerar_redirect;
+            }
+            else if(pFuncaoBotao == BotaoProcessamento.CancelarProcessamento)
+            {
+                btnGerarRedirects.BackColor = Color.Firebrick;
+                btnGerarRedirects.Text = "Cancelar";
+                btnGerarRedirects.Image = Properties.Resources.icone_cancelar;
+            }
+        }
         #endregion
+
+        /// <summary>
+        /// Enum que define se o botão de processamento adotará a função de Iniciar ou Cancelar o processamento
+        /// </summary>
+        private enum BotaoProcessamento
+        {
+            IniciarProcessamento,
+
+            CancelarProcessamento
+        }
     }
 }

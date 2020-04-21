@@ -31,7 +31,6 @@
             this.openFileDialogSitemap = new System.Windows.Forms.OpenFileDialog();
             this.label1 = new System.Windows.Forms.Label();
             this.lblSitemapUrlAntigo = new System.Windows.Forms.Label();
-            this.btnBuscarSitemapAtual = new System.Windows.Forms.Button();
             this.lblSitemapUrlAtual = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.lblEtapaAtual = new System.Windows.Forms.Label();
@@ -39,9 +38,11 @@
             this.panel1 = new System.Windows.Forms.Panel();
             this.label2 = new System.Windows.Forms.Label();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
-            this.txtGerarRedirects = new System.Windows.Forms.Button();
-            this.btnBuscarSitemapAntigo = new System.Windows.Forms.Button();
             this.chkRemoverSubdominio = new System.Windows.Forms.CheckBox();
+            this.pgbProgresso = new System.Windows.Forms.ProgressBar();
+            this.btnGerarRedirects = new System.Windows.Forms.Button();
+            this.btnBuscarSitemapAtual = new System.Windows.Forms.Button();
+            this.btnBuscarSitemapAntigo = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
@@ -70,24 +71,6 @@
             this.lblSitemapUrlAntigo.Size = new System.Drawing.Size(153, 16);
             this.lblSitemapUrlAntigo.TabIndex = 1;
             this.lblSitemapUrlAntigo.Text = "URL do sitemap antigo";
-            // 
-            // btnBuscarSitemapAtual
-            // 
-            this.btnBuscarSitemapAtual.BackColor = System.Drawing.Color.White;
-            this.btnBuscarSitemapAtual.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnBuscarSitemapAtual.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnBuscarSitemapAtual.Font = new System.Drawing.Font("Century Gothic", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnBuscarSitemapAtual.Image = global::Projeto_Redirects.Properties.Resources.icone_buscar;
-            this.btnBuscarSitemapAtual.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnBuscarSitemapAtual.Location = new System.Drawing.Point(393, 161);
-            this.btnBuscarSitemapAtual.Name = "btnBuscarSitemapAtual";
-            this.btnBuscarSitemapAtual.Size = new System.Drawing.Size(129, 45);
-            this.btnBuscarSitemapAtual.TabIndex = 5;
-            this.btnBuscarSitemapAtual.Text = "Buscar Sitemap";
-            this.btnBuscarSitemapAtual.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnBuscarSitemapAtual.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.btnBuscarSitemapAtual.UseVisualStyleBackColor = false;
-            this.btnBuscarSitemapAtual.Click += new System.EventHandler(this.btnBuscarSitemapAtual_Click);
             // 
             // lblSitemapUrlAtual
             // 
@@ -157,23 +140,59 @@
             this.pictureBox1.TabIndex = 0;
             this.pictureBox1.TabStop = false;
             // 
-            // txtGerarRedirects
+            // chkRemoverSubdominio
             // 
-            this.txtGerarRedirects.BackColor = System.Drawing.SystemColors.Highlight;
-            this.txtGerarRedirects.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.txtGerarRedirects.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.txtGerarRedirects.Font = new System.Drawing.Font("Century Gothic", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtGerarRedirects.ForeColor = System.Drawing.Color.White;
-            this.txtGerarRedirects.Image = global::Projeto_Redirects.Properties.Resources.icone_gerar_redirect;
-            this.txtGerarRedirects.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.txtGerarRedirects.Location = new System.Drawing.Point(177, 278);
-            this.txtGerarRedirects.Name = "txtGerarRedirects";
-            this.txtGerarRedirects.Size = new System.Drawing.Size(173, 50);
-            this.txtGerarRedirects.TabIndex = 6;
-            this.txtGerarRedirects.Text = "Gerar Redirects";
-            this.txtGerarRedirects.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.txtGerarRedirects.UseVisualStyleBackColor = false;
-            this.txtGerarRedirects.Click += new System.EventHandler(this.txtGerarRedirects_Click);
+            this.chkRemoverSubdominio.AutoSize = true;
+            this.chkRemoverSubdominio.Location = new System.Drawing.Point(12, 223);
+            this.chkRemoverSubdominio.Name = "chkRemoverSubdominio";
+            this.chkRemoverSubdominio.Size = new System.Drawing.Size(308, 21);
+            this.chkRemoverSubdominio.TabIndex = 9;
+            this.chkRemoverSubdominio.Text = "Remover subdomínio Cintra Comunicação";
+            this.chkRemoverSubdominio.UseVisualStyleBackColor = true;
+            // 
+            // pgbProgresso
+            // 
+            this.pgbProgresso.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.pgbProgresso.Location = new System.Drawing.Point(0, 342);
+            this.pgbProgresso.Name = "pgbProgresso";
+            this.pgbProgresso.Size = new System.Drawing.Size(534, 2);
+            this.pgbProgresso.TabIndex = 10;
+            // 
+            // btnGerarRedirects
+            // 
+            this.btnGerarRedirects.BackColor = System.Drawing.SystemColors.Highlight;
+            this.btnGerarRedirects.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnGerarRedirects.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnGerarRedirects.Font = new System.Drawing.Font("Century Gothic", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnGerarRedirects.ForeColor = System.Drawing.Color.White;
+            this.btnGerarRedirects.Image = global::Projeto_Redirects.Properties.Resources.icone_gerar_redirect;
+            this.btnGerarRedirects.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnGerarRedirects.Location = new System.Drawing.Point(169, 275);
+            this.btnGerarRedirects.Name = "btnGerarRedirects";
+            this.btnGerarRedirects.Size = new System.Drawing.Size(173, 50);
+            this.btnGerarRedirects.TabIndex = 6;
+            this.btnGerarRedirects.Text = "Gerar Redirects";
+            this.btnGerarRedirects.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnGerarRedirects.UseVisualStyleBackColor = false;
+            this.btnGerarRedirects.Click += new System.EventHandler(this.btnGerarRedirects_Click);
+            // 
+            // btnBuscarSitemapAtual
+            // 
+            this.btnBuscarSitemapAtual.BackColor = System.Drawing.Color.White;
+            this.btnBuscarSitemapAtual.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnBuscarSitemapAtual.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnBuscarSitemapAtual.Font = new System.Drawing.Font("Century Gothic", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnBuscarSitemapAtual.Image = global::Projeto_Redirects.Properties.Resources.icone_buscar;
+            this.btnBuscarSitemapAtual.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnBuscarSitemapAtual.Location = new System.Drawing.Point(393, 161);
+            this.btnBuscarSitemapAtual.Name = "btnBuscarSitemapAtual";
+            this.btnBuscarSitemapAtual.Size = new System.Drawing.Size(129, 45);
+            this.btnBuscarSitemapAtual.TabIndex = 5;
+            this.btnBuscarSitemapAtual.Text = "Buscar Sitemap";
+            this.btnBuscarSitemapAtual.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnBuscarSitemapAtual.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnBuscarSitemapAtual.UseVisualStyleBackColor = false;
+            this.btnBuscarSitemapAtual.Click += new System.EventHandler(this.btnBuscarSitemapAtual_Click);
             // 
             // btnBuscarSitemapAntigo
             // 
@@ -192,24 +211,15 @@
             this.btnBuscarSitemapAntigo.UseVisualStyleBackColor = false;
             this.btnBuscarSitemapAntigo.Click += new System.EventHandler(this.btnBuscarSitemapAntigo_Click);
             // 
-            // chkRemoverSubdominio
-            // 
-            this.chkRemoverSubdominio.AutoSize = true;
-            this.chkRemoverSubdominio.Location = new System.Drawing.Point(12, 223);
-            this.chkRemoverSubdominio.Name = "chkRemoverSubdominio";
-            this.chkRemoverSubdominio.Size = new System.Drawing.Size(308, 21);
-            this.chkRemoverSubdominio.TabIndex = 9;
-            this.chkRemoverSubdominio.Text = "Remover subdomínio Cintra Comunicação";
-            this.chkRemoverSubdominio.UseVisualStyleBackColor = true;
-            // 
             // Form1
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.ClientSize = new System.Drawing.Size(534, 361);
+            this.Controls.Add(this.pgbProgresso);
             this.Controls.Add(this.chkRemoverSubdominio);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.lblEtapaAtual);
-            this.Controls.Add(this.txtGerarRedirects);
+            this.Controls.Add(this.btnGerarRedirects);
             this.Controls.Add(this.btnBuscarSitemapAtual);
             this.Controls.Add(this.lblSitemapUrlAtual);
             this.Controls.Add(this.label3);
@@ -238,13 +248,14 @@
         private System.Windows.Forms.Button btnBuscarSitemapAtual;
         private System.Windows.Forms.Label lblSitemapUrlAtual;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Button txtGerarRedirects;
+        private System.Windows.Forms.Button btnGerarRedirects;
         private System.Windows.Forms.Label lblEtapaAtual;
         private System.Windows.Forms.SaveFileDialog saveFileDialogSitemap;
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.CheckBox chkRemoverSubdominio;
+        private System.Windows.Forms.ProgressBar pgbProgresso;
     }
 }
 
