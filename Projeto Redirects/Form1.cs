@@ -36,9 +36,9 @@ namespace Projeto_Redirects
         #region Eventos
         private void btnBuscarSitemapAntigo_Click(object sender, EventArgs e)
         {
-            if(openFileDialogSitemap.ShowDialog() == DialogResult.OK)
+            if (openFileDialogSitemap.ShowDialog() == DialogResult.OK)
             {
-                if(!string.IsNullOrEmpty(_caminhoSitemapAtual))
+                if (!string.IsNullOrEmpty(_caminhoSitemapAtual))
                 {
                     if (_caminhoSitemapAtual == openFileDialogSitemap.FileName)
                     {
@@ -48,7 +48,7 @@ namespace Projeto_Redirects
                 }
 
                 _caminhoSitemapAntigo = openFileDialogSitemap.FileName;
-                string nomeDoArquivo = openFileDialogSitemap.FileName.Substring(openFileDialogSitemap.FileName.LastIndexOf("\\")).Replace("\\","");
+                string nomeDoArquivo = openFileDialogSitemap.FileName.Substring(openFileDialogSitemap.FileName.LastIndexOf("\\")).Replace("\\", "");
                 lblSitemapUrlAntigo.Text = nomeDoArquivo;
             }
         }
@@ -76,37 +76,14 @@ namespace Projeto_Redirects
         {
             try
             {
-                if(string.IsNullOrEmpty(_caminhoSitemapAntigo) || string.IsNullOrEmpty(_caminhoSitemapAtual))
+                if (string.IsNullOrEmpty(_caminhoSitemapAntigo) || string.IsNullOrEmpty(_caminhoSitemapAtual))
                 {
                     MessageBox.Show("Defina os dois arquivos de sitemap para continuar!", "Operação não pôde continuar", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
-                this.UseWaitCursor = true;
-                List<Redirect> redirects = new List<Redirect>();
 
-                //Lendo arquivos XML e recuperando URLs
-                lblEtapaAtual.Text = "Lendo arquivos XML...";
-                lblEtapaAtual.BackColor = Color.LightGray;
-                List<string> urlsSitemapAntigo = await GerarListaDeUrlsAsync(_caminhoSitemapAntigo, chkRemoverSubdominio.Checked);
-                List<string> urlsSitemapAtual = await GerarListaDeUrlsAsync(_caminhoSitemapAtual, chkRemoverSubdominio.Checked);
-
-                //Removendo ocorrências idênticas entre URLs do site atual e site antigo
-                lblEtapaAtual.Text = "Removendo ocorrências idênticas...";
-                urlsSitemapAntigo = urlsSitemapAntigo.Except(urlsSitemapAtual).ToList();
-
-
-                //Buscando semelhanças
-                lblEtapaAtual.Text = "Gerando Redirects...";
-                int qtdUrlsIguais = GerarRedirects(urlsSitemapAntigo, urlsSitemapAtual, out redirects);
-
-                //Salvando arquivo com redirects
-                lblEtapaAtual.Text = "Salvando arquivo...";
-                await EscreverArquivo(redirects);
-
-                //Finalizando operação
-                lblEtapaAtual.Text = "Redirects gerados com sucesso";
-                lblEtapaAtual.BackColor = Color.LightGreen;
-                this.UseWaitCursor = false;
+                //Task iniciarprocessamento = new Task(await IniciarProcessamentoAsync());
+                await IniciarProcessamentoAsync();
             }
             catch (Exception erro)
             {
@@ -119,6 +96,42 @@ namespace Projeto_Redirects
         #endregion
 
         #region Métodos
+        /// <summary>
+        /// Método que inicia processamento do 
+        /// </summary>
+        /// <returns></returns>
+        private async Task IniciarProcessamentoAsync()
+        {
+            this.UseWaitCursor = true;
+            List<Redirect> redirects = new List<Redirect>();
+
+            //Lendo arquivos XML e recuperando URLs
+            lblEtapaAtual.Text = "Lendo arquivos XML...";
+            lblEtapaAtual.BackColor = Color.LightGray;
+            List<string> urlsSitemapAntigo = await GerarListaDeUrlsAsync(_caminhoSitemapAntigo, chkRemoverSubdominio.Checked);
+            List<string> urlsSitemapAtual = await GerarListaDeUrlsAsync(_caminhoSitemapAtual, chkRemoverSubdominio.Checked);
+
+            //Removendo ocorrências idênticas entre URLs do site atual e site antigo
+            lblEtapaAtual.Text = "Removendo ocorrências idênticas...";
+            urlsSitemapAntigo = urlsSitemapAntigo.Except(urlsSitemapAtual).ToList();
+
+
+            //Buscando semelhanças
+            lblEtapaAtual.Text = "Gerando Redirects...";
+            int qtdRedirectsFeitos = await Task.Run(() => GerarRedirects(urlsSitemapAntigo, urlsSitemapAtual, out redirects));
+            MessageBox.Show("Redirects feitos: " + qtdRedirectsFeitos);
+
+
+            //Salvando arquivo com redirects
+            lblEtapaAtual.Text = "Salvando arquivo...";
+            await EscreverArquivoAsync(redirects);
+
+            //Finalizando operação
+            lblEtapaAtual.Text = "Redirects gerados com sucesso";
+            lblEtapaAtual.BackColor = Color.LightGreen;
+            this.UseWaitCursor = false;
+        }
+
         /// <summary>
         /// Lê um arquivo XML de Sitemap e retorna uma lista com os URLs encontrados
         /// </summary>
@@ -168,11 +181,10 @@ namespace Projeto_Redirects
         /// <returns>Retorna quantidade de Redirects</returns>
         private int GerarRedirects(List<string> pUrlsSitemapAntigo, List<string> pUrlsSitemapAtual, out List<Redirect> pRedirects)
         {
-            int urlsRedirecionadas = 0;
             List<Redirect> redirects = new List<Redirect>();
 
             #region Buscando URLs com final idêntico
-            foreach(string urlAntiga in pUrlsSitemapAntigo)
+            foreach (string urlAntiga in pUrlsSitemapAntigo)
             {
                 string urlAntigaFormatada = urlAntiga;
 
@@ -181,10 +193,10 @@ namespace Projeto_Redirects
                 {
                     urlAntigaFormatada = urlAntigaFormatada.Remove(urlAntigaFormatada.Length - 1);
                 }
-                
+
                 urlAntigaFormatada = urlAntigaFormatada.Substring(urlAntigaFormatada.LastIndexOf("/"));
 
-                foreach(string urlNova in pUrlsSitemapAtual)
+                foreach (string urlNova in pUrlsSitemapAtual)
                 {
                     string urlNovaFormatada = urlNova;
 
@@ -203,7 +215,6 @@ namespace Projeto_Redirects
                             De = urlAntiga,
                             Para = urlNova
                         });
-                        urlsRedirecionadas++;
                         break;
                     }
                     else
@@ -213,18 +224,15 @@ namespace Projeto_Redirects
                             De = urlAntiga,
                             Para = BuscarUrlMaisSimilar(urlAntiga, pUrlsSitemapAtual)
                         });
-                        urlsRedirecionadas++;
                         break;
                     }
                 }
 
             }
-
-
             #endregion
 
             pRedirects = redirects;
-            return urlsRedirecionadas;
+            return redirects.Count;
         }
 
         /// <summary>
@@ -238,7 +246,7 @@ namespace Projeto_Redirects
             double maiorSimilaridade = 0;
             string urlMaisSimilar = string.Empty;
 
-            foreach(string url in pListaDeUrls)
+            foreach (string url in pListaDeUrls)
             {
                 double similaridadeAtual = VerificarSimilaridade(pUrl1, url);
                 if (similaridadeAtual > maiorSimilaridade)
@@ -337,11 +345,11 @@ namespace Projeto_Redirects
         /// </summary>
         /// <param name="pListaDeRedirects">Lista de redirects gerados</param>
         /// <returns></returns>
-        private async Task EscreverArquivo(List<Redirect> pListaDeRedirects)
+        private async Task EscreverArquivoAsync(List<Redirect> pListaDeRedirects)
         {
             string caminhoArquivo = "C:\\Redirects.txt";
 
-            if(saveFileDialogSitemap.ShowDialog() == DialogResult.OK)
+            if (saveFileDialogSitemap.ShowDialog() == DialogResult.OK)
             {
                 caminhoArquivo = saveFileDialogSitemap.FileName;
             }
